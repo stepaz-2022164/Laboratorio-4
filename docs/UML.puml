@@ -1,0 +1,273 @@
+@startuml CMS_Sistema
+
+' Interfaces
+interface IPublishable {
+  + publish(): void
+  + unpublish(): void
+  + isPublished(): boolean
+}
+
+interface ISearchable {
+  + matchesKeyword(keyword: String): boolean
+  + getSearchableFields(): String[]
+}
+
+' Clase abstracta Content
+abstract class Content {
+  # id: int
+  # title: String
+  # author: String
+  # creationDate: LocalDate
+  # lastModified: LocalDate
+  # status: String
+  # category: Category
+  # tags: ArrayList<Tag>
+
+  + Content(title: String, author: String)
+  + {abstract} publish(): void
+  + {abstract} display(): String
+  + {abstract} edit(): void
+  + getId(): int
+  + getTitle(): String
+  + setTitle(title: String): void
+  + getAuthor(): String
+  + getStatus(): String
+  + setStatus(status: String): void
+  + getCategory(): Category
+  + setCategory(category: Category): void
+  + addTag(tag: Tag): void
+  + getTags(): ArrayList<Tag>
+}
+
+' Clases concretas de contenido
+class Article {
+  - content: String
+  - wordCount: int
+  - readTime: int
+
+  + Article(title: String, author: String, content: String)
+  + publish(): void
+  + display(): String
+  + edit(): void
+  - calculateReadTime(): void
+  + getContent(): String
+  + setContent(content: String): void
+  + getWordCount(): int
+}
+
+class Video {
+  - url: String
+  - duration: int
+  - resolution: String
+  - format: String
+
+  + Video(title: String, author: String, url: String, duration: int)
+  + publish(): void
+  + display(): String
+  + edit(): void
+  + getUrl(): String
+  + setUrl(url: String): void
+  + getDuration(): int
+  + getResolution(): String
+  + setResolution(resolution: String): void
+}
+
+class Image {
+  - url: String
+  - dimensions: String
+  - format: String
+  - fileSize: double
+
+  + Image(title: String, author: String, url: String)
+  + publish(): void
+  + display(): String
+  + edit(): void
+  + getUrl(): String
+  + setUrl(url: String): void
+  + getDimensions(): String
+  + setDimensions(dimensions: String): void
+  + getFormat(): String
+}
+
+' Clase abstracta User
+abstract class User {
+  # id: int
+  # username: String
+  # email: String
+  # password: String
+  # role: String
+
+  + User(username: String, email: String, password: String)
+  + {abstract} canPublish(): boolean
+  + {abstract} canDelete(): boolean
+  + getId(): int
+  + getUsername(): String
+  + getEmail(): String
+  + getRole(): String
+}
+
+' Clases concretas de usuarios
+class Administrator {
+  - adminLevel: int
+
+  + Administrator(username: String, email: String, password: String)
+  + canPublish(): boolean
+  + canDelete(): boolean
+  + getAdminLevel(): int
+}
+
+class Editor {
+  - assignedCategories: ArrayList<Category>
+
+  + Editor(username: String, email: String, password: String)
+  + canPublish(): boolean
+  + canDelete(): boolean
+  + getAssignedCategories(): ArrayList<Category>
+  + addAssignedCategory(category: Category): void
+}
+
+' Clases auxiliares
+class Category {
+  - id: int
+  - name: String
+  - description: String
+
+  + Category(name: String, description: String)
+  + getId(): int
+  + getName(): String
+  + setName(name: String): void
+  + getDescription(): String
+}
+
+class Tag {
+  - id: int
+  - name: String
+
+  + Tag(name: String)
+  + getId(): int
+  + getName(): String
+}
+
+class Report {
+  - generationDate: LocalDate
+  - contents: ArrayList<Content>
+
+  + Report(contents: ArrayList<Content>)
+  + generateSummary(): String
+  + getContentsByType(type: String): int
+  + getContentsByCategory(category: Category): int
+  + getPublishedCount(): int
+  + getTotalContents(): int
+  + exportReport(): String
+}
+
+' Controladores (MVC)
+class ContentController {
+  - contents: ArrayList<Content>
+  - categories: ArrayList<Category>
+  - tags: ArrayList<Tag>
+
+  + ContentController()
+  + createContent(type: String, user: User): Content
+  + editContent(id: int, user: User): boolean
+  + deleteContent(id: int, user: User): boolean
+  + publishContent(id: int, user: User): boolean
+  + searchByType(type: String): ArrayList<Content>
+  + searchByCategory(category: Category): ArrayList<Content>
+  + searchByTag(tag: Tag): ArrayList<Content>
+  + getAllContents(): ArrayList<Content>
+  + getContentById(id: int): Content
+}
+
+class UserController {
+  - users: ArrayList<User>
+  - authenticatedUser: User
+
+  + UserController()
+  + authenticate(username: String, password: String): User
+  + validatePermission(user: User, action: String): boolean
+  + registerUser(user: User): boolean
+  + getAllUsers(): ArrayList<User>
+}
+
+class CMSController {
+  - contentController: ContentController
+  - userController: UserController
+  - currentUser: User
+  - report: Report
+
+  + CMSController()
+  + login(username: String, password: String): boolean
+  + logout(): void
+  + getCurrentUser(): User
+  + manageContent(): void
+  + generateReport(): void
+}
+
+' Vista (MVC)
+class CMSView {
+  - scanner: Scanner
+
+  + CMSView()
+  + showMainMenu(): void
+  + showLoginScreen(): void
+  + showContentMenu(user: User): void
+  + showCreateContentMenu(): void
+  + showSearchMenu(): void
+  + displayContent(content: Content): void
+  + displayContentList(contents: ArrayList<Content>): void
+  + displayReport(report: String): void
+  + showMessage(message: String): void
+  + getInput(prompt: String): String
+  + getIntInput(prompt: String): int
+}
+
+' Clase Main
+class Main {
+  - controller: CMSController
+  - view: CMSView
+  - scanner: Scanner
+
+  + {static} main(args: String[]): void
+  - initializeSystem(): void
+}
+
+' Relaciones de herencia
+Content <|-- Article
+Content <|-- Video
+Content <|-- Image
+
+User <|-- Administrator
+User <|-- Editor
+
+' Implementación de interfaces
+Content ..|> IPublishable
+Content ..|> ISearchable
+
+' Composición y agregación
+Content "1" *-- "1" Category : tiene
+Content "1" o-- "*" Tag : contiene
+
+ContentController "1" o-- "*" Content : gestiona
+ContentController "1" o-- "*" Category : organiza
+ContentController "1" o-- "*" Tag : organiza
+
+UserController "1" o-- "*" User : gestiona
+UserController "1" --> "0..1" User : authenticatedUser
+
+CMSController "1" *-- "1" ContentController
+CMSController "1" *-- "1" UserController
+CMSController "1" --> "0..1" User : currentUser
+CMSController "1" --> "0..1" Report : genera
+
+Report "1" o-- "*" Content : analiza
+
+Editor "1" o-- "*" Category : assignedCategories
+
+Main "1" *-- "1" CMSController
+Main "1" *-- "1" CMSView
+
+CMSView ..> Content : muestra
+CMSView ..> User : muestra
+
+@enduml
